@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_CREDENTIALS_ID = 'dockerhub0cred' // Jenkins credentials ID for Docker Hub
+        DOCKER_CREDENTIALS_ID = 'dockerhub0cred2' // Jenkins credentials ID for Docker Hub
         DOCKER_IMAGE = 'hoshmand001/temperature-converter'
     }
 
