@@ -1,12 +1,12 @@
-FROM php:7.4-cli
+FROM docker.io/library/php:7.4-cli
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Install Git
+RUN apt-get update && apt-get install -y git
 
-# Set the working directory in the container
+# Set the working directory
 WORKDIR /app
 
-# Copy the contents of the project directory to the working directory in the container
+# Copy the project files
 COPY . .
 
 # Install project dependencies
