@@ -2,48 +2,63 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_CREDENTIALS_ID = 'dockerhub0cred2' // Jenkins credentials ID for Docker Hub
-        DOCKER_IMAGE = 'hoshmand001/temperature-converter'
+        DOCKER_IMAGE = 'hoshmand001/temperature-converter:latest'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/Hoshmand01/temperature-converter.git'
+                git 'https://github.com/Hoshmand01/temperature-converter.git'
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build the Docker image
-                    docker.build("${DOCKER_IMAGE}:${env.BUILD_ID}")
+                    dockerImage = docker.build("${env.DOCKER_IMAGE}")
                 }
             }
         }
+
+        stage('Run Unit Tests') {
+            steps {
+                script {
+                    dockerImage.inside {
+                        sh 'python -m unittest discover -s tests'
+                    }
+                }
+            }
+        }
+
         stage('Push Docker Image') {
             steps {
                 script {
-                    // Push the Docker image to Docker Hub
-                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CREDENTIALS_ID}") {
-                        docker.image("${DOCKER_IMAGE}:${env.BUILD_ID}").push()
+                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
+                        dockerImage.push()
                     }
                 }
             }
         }
-        stage('Run Tests') {
+
+        stage('Deploy') {
             steps {
                 script {
-                    docker.image("${DOCKER_IMAGE}:${env.BUILD_ID}").inside {
-                        sh 'vendor/bin/phpunit tests'
-                    }
+                    // Replace this with your actual deployment commands, e.g., kubectl, helm, etc.
+                    sh 'echo "Deploying the application..."'
                 }
             }
         }
     }
+
     post {
         always {
-            // Clean workspace after build
             cleanWs()
+        }
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
         }
     }
 }
