@@ -1,20 +1,24 @@
-FROM docker.io/library/php:7.4-cli
+# Use the PHP 7.4 CLI image as base
+FROM php:7.4-cli
 
-# Install Git and Composer
+# Install git and other dependencies
 RUN apt-get update && \
-    apt-get install -y git && \
-    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
+    apt-get install -y git unzip && \
+    docker-php-ext-install zip
+
+# Install Composer
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
     php composer-setup.php --install-dir=/usr/local/bin --filename=composer && \
     php -r "unlink('composer-setup.php');"
 
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
-# Copy the project files
+# Copy all files to the container
 COPY . .
 
-# Install project dependencies
+# Install PHP dependencies
 RUN composer install
 
-# Run PHPUnit tests
+# Set the command to run PHPUnit tests
 CMD ["vendor/bin/phpunit", "tests"]
