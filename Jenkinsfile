@@ -1,17 +1,48 @@
-# Use an official PHP runtime as a parent image
-FROM php:7.4-apache
-
-# Set the working directory in the container
-WORKDIR /var/www/html
-
-# Copy the current directory contents into the container at /var/www/html
-COPY . /var/www/html
-
-# Install any needed PHP extensions
-RUN docker-php-ext-install mysqli pdo pdo_mysql
-
-# Expose port 80 to the world outside this container
-EXPOSE 80
-
-# Start Apache in the foreground
-CMD ["apache2-foreground"]
+pipeline {
+    agent any
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/Hoshmand01/temperature-converter.git'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    def app = docker.build("hoshmand001/temperature-converter:latest")
+                }
+            }
+        }
+        stage('Run Unit Tests') {
+            steps {
+                script {
+                    def app = docker.image("hoshmand001/temperature-converter:latest")
+                    app.inside {
+                        sh 'php ./vendor/bin/phpunit tests'
+                    }
+                }
+            }
+        }
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-credentials') {
+                        def app = docker.image("hoshmand001/temperature-converter:latest")
+                        app.push()
+                    }
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Deploying...'
+                // Add deployment steps here
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
