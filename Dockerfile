@@ -1,24 +1,27 @@
-# Use the PHP 7.4 CLI image as base
-FROM php:7.4-cli
+# Use the official Python image from the Docker Hub
+FROM python:3.9-slim
 
-# Install git and other dependencies
-RUN apt-get update && \
-    apt-get install -y git unzip && \
-    docker-php-ext-install zip
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Install Composer
-RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
-    php composer-setup.php --install-dir=/usr/local/bin --filename=composer && \
-    php -r "unlink('composer-setup.php');"
-
-# Set working directory
+# Set the working directory
 WORKDIR /app
 
-# Copy all files to the container
-COPY . .
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc libc6-dev
 
-# Install PHP dependencies
-RUN composer install
+# Install Python dependencies
+COPY requirements.txt /app/
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
 
-# Set the command to run PHPUnit tests
-CMD ["vendor/bin/phpunit", "tests"]
+# Copy the application code
+COPY . /app/
+
+# Expose the port that the app runs on
+EXPOSE 5000
+
+# Run the application
+CMD ["python", "app.py"]
