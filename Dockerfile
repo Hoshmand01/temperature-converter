@@ -1,27 +1,20 @@
-# Use the official Python image from the Docker Hub
-FROM python:3.9-slim
+FROM php:8.0-cli
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Install necessary packages
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    && docker-php-ext-install pdo_mysql
 
-# Set the working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc libc6-dev
+# Copy PHP source code
+COPY . /app
 
-# Install Python dependencies
-COPY requirements.txt /app/
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy the application code
-COPY . /app/
+# Install PHP dependencies
+RUN composer install --no-interaction --no-scripts --prefer-dist
 
-# Expose the port that the app runs on
-EXPOSE 5000
-
-# Run the application
-CMD ["python", "app.py"]
+CMD ["php", "-S", "0.0.0.0:8000", "-t", "public"]
