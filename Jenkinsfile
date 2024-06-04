@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/Hoshmand01/temperature-converter.git'
+                git branch: 'main', url: 'https://github.com/Hoshmand01/temperature-converter.git'
             }
         }
         stage('Build Docker Image') {
