@@ -1,64 +1,17 @@
-pipeline {
-    agent any
+# Use an official PHP runtime as a parent image
+FROM php:7.4-apache
 
-    environment {
-        DOCKER_IMAGE = 'hoshmand001/temperature-converter:latest'
-    }
+# Set the working directory in the container
+WORKDIR /var/www/html
 
-    stages {
-        stage('Clone Repository') {
-            steps {
-                git branch: 'main', url: 'https://github.com/Hoshmand01/temperature-converter.git'
-            }
-        }
+# Copy the current directory contents into the container at /var/www/html
+COPY . /var/www/html
 
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    dockerImage = docker.build("${env.DOCKER_IMAGE}")
-                }
-            }
-        }
+# Install any needed PHP extensions
+RUN docker-php-ext-install mysqli pdo pdo_mysql
 
-        stage('Run Unit Tests') {
-            steps {
-                script {
-                    dockerImage.inside {
-                        sh 'python -m unittest discover -s tests'
-                    }
-                }
-            }
-        }
+# Expose port 80 to the world outside this container
+EXPOSE 80
 
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        dockerImage.push()
-                    }
-                }
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                script {
-                    // Replace this with your actual deployment commands, e.g., kubectl, helm, etc.
-                    sh 'echo "Deploying the application..."'
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            cleanWs()
-        }
-        success {
-            echo 'Pipeline completed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed!'
-        }
-    }
-}
+# Start Apache in the foreground
+CMD ["apache2-foreground"]
