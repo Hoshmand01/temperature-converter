@@ -3,7 +3,7 @@ pipeline {
 
     triggers {
         // Uncomment to trigger build on push to GitHub
-         pollSCM('H/5 * * * *') // Check every 5 minutes (optional)
+        // pollSCM('H/5 * * * *') // Check every 5 minutes (optional)
     }
 
     stages {
