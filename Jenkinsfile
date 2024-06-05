@@ -2,8 +2,7 @@ pipeline {
     agent any
 
     triggers {
-        // Uncomment to trigger build on push to GitHub
-         pollSCM('H/5 * * * *') // Check every 5 minutes (optional)
+        pollSCM('H/5 * * * *') // Check every 5 minutes (optional)
     }
 
     stages {
@@ -20,22 +19,17 @@ pipeline {
         }
         stage('Build Docker Image') {
             steps {
-                docker {
-                    image 'docker:latest'  // Base image for building
-                    args '-v $HOME/.docker:/root/.docker --build-arg JENKINS_HOME=$JENKINS_HOME'
-                    build 'Dockerfile'
-                    tag 'hoshmand001/temperature-converter:latest'  // Tag the built image
+                script {
+                    docker.build 'hoshmand001/temperature-converter:latest'  // Build the Docker image
                 }
             }
         }
         stage('Push Docker Image (Optional)') {
             steps {
                 script {
-                    docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-                }
-                docker {
-                    image 'docker:latest'  // Base image for pushing (usually unnecessary)
-                    push 'hoshmand001/temperature-converter:latest'
+                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-credentials') {
+                        dockerImage.push('hoshmand001/temperature-converter:latest')  // Push the Docker image to Docker Hub
+                    }
                 }
             }
         }
