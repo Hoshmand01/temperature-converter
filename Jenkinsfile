@@ -1,45 +1,58 @@
 pipeline {
     agent any
+
+    environment {
+        DOCKER_IMAGE = "hoshmand001/temperature-converter:latest"
+    }
+
+    triggers {
+        pollSCM('H/5 * * * *')
+        cron('H 0 * * 0')
+    }
+
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/Hoshmand01/temperature-converter.git'
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 script {
-                    def app = docker.build("hoshmand001/temperature-converter:latest")
+                    docker.build("${DOCKER_IMAGE}")
                 }
             }
         }
+
         stage('Run Unit Tests') {
             steps {
                 script {
-                    def app = docker.image("hoshmand001/temperature-converter:latest")
-                    app.inside {
-                        sh 'php ./vendor/bin/phpunit tests'
+                    docker.image("${DOCKER_IMAGE}").inside {
+                        sh 'vendor/bin/phpunit tests'
                     }
                 }
             }
         }
+
         stage('Push Docker Image') {
             steps {
                 script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-credentials') {
-                        def app = docker.image("hoshmand001/temperature-converter:latest")
-                        app.push()
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
+                        docker.image("${DOCKER_IMAGE}").push()
                     }
                 }
             }
         }
+
         stage('Deploy') {
             steps {
                 echo 'Deploying...'
-                // Add deployment steps here
+                // Add your deployment steps here
             }
         }
     }
+
     post {
         always {
             cleanWs()
