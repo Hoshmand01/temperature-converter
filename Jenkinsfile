@@ -21,10 +21,10 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 docker {
-                    image 'docker:latest'
+                    image 'docker:latest'  // Base image for building
                     args '-v $HOME/.docker:/root/.docker --build-arg JENKINS_HOME=$JENKINS_HOME'
                     build 'Dockerfile'
-                    tag 'hoshmand001/temperature-converter:latest'
+                    tag 'hoshmand001/temperature-converter:latest'  // Tag the built image
                 }
             }
         }
@@ -34,6 +34,7 @@ pipeline {
                     docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
                 }
                 docker {
+                    image 'docker:latest'  // Base image for pushing (usually unnecessary)
                     push 'hoshmand001/temperature-converter:latest'
                 }
             }
