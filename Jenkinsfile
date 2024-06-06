@@ -1,37 +1,54 @@
 pipeline {
     agent any
 
-    triggers {
-        pollSCM('H/5 * * * *') // Check every 5 minutes (optional)
-    }
-
     stages {
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                git branch: 'main', credentialsId: 'dockerhub-credentials', url: 'https://github.com/Hoshmand01/temperature-converter.git'
+                // Checkout the code from the repository
+                git url: 'https://github.com/Hoshmand01/temperature-converter'
             }
         }
-        stage('Build and Test') {
-            steps {
-                sh 'composer install' // Install dependencies
-                sh 'vendor/bin/phpunit tests' // Run tests
-            }
-        }
+
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build 'hoshmand001/temperature-converter:latest'  // Build the Docker image
+                    // Build Docker image
+                    dockerImage = docker.build("temperature-converter:${env.BUILD_ID}")
                 }
             }
         }
-        stage('Push Docker Image (Optional)') {
+
+        stage('Run Tests') {
             steps {
                 script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-credentials') {
-                        dockerImage.push('hoshmand001/temperature-converter:latest')  // Push the Docker image to Docker Hub
+                    // Run PHPUnit tests inside the Docker container
+                    dockerImage.inside {
+                        sh 'vendor/bin/phpunit --configuration phpunit.xml --colors=always'
                     }
                 }
             }
+        }
+
+        stage('Tag and Push Docker Image') {
+            steps {
+                script {
+                    // Tag Docker image
+                    dockerImage.tag("latest")
+
+                    // Push Docker image to a registry (e.g., Docker Hub)
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
+                        dockerImage.push("${env.BUILD_ID}")
+                        dockerImage.push("latest")
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Archive test results, etc.
+            junit 'test-reports/**/*.xml'
         }
     }
 }
