@@ -1,23 +1,17 @@
-# Use the official PHP image as a base image
-FROM php:7.4-cli
+# Use an official PHP runtime as a parent image
+FROM php:8.2-cli
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    zip \
-    unzip
-
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Set working directory
+# Set the working directory
 WORKDIR /app
 
-# Copy all files from current directory to /app in the container
-COPY . .
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Install PHP dependencies using Composer
-RUN composer install
+# Copy the application files
+COPY . /app
 
-# Command to run the application
-CMD ["php", "your-script.php"]
+# Install PHP dependencies
+RUN composer install --no-interaction --no-progress --prefer-dist
+
+# Run PHPUnit tests
+CMD ["vendor/bin/phpunit", "--configuration", "phpunit.xml", "--colors=always"]
